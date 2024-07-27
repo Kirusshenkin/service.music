@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// данный скрипт нам очень важен для понимания что можно использовать внешние библиотеки для выполнения команд в терминале
 // checkMusicPlaying проверяет состояние воспроизведения музыки в указанном приложении.
 func checkMusicPlaying(appName string) bool {
 	var script string
