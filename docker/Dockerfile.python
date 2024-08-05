@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+FROM python:3.9
+
+# Устанавливаем необходимые пакеты
+RUN pip install flask
+
+# Копируем файлы приложения
+COPY python-app/app.py /app.py
+
+# Указываем рабочую директорию
+WORKDIR /
+
+# Открываем порт
+EXPOSE 5000
+
+# Запускаем приложение
+CMD ["python", "app.py"]

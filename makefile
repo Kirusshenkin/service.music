@@ -1,42 +1,29 @@
-# Название образа
-IMAGE_NAME = service-music
+include .env
+export $(shell sed 's/=.*//' .env)
 
-# Тег образа
-IMAGE_TAG = latest
+.PHONY: build push deploy
 
-# Переменные для kubectl
-NAMESPACE = default
+# Переменные для Docker
+GO_SERVER_IMAGE = $(DOCKER_USER)/go-server:latest
+PYTHON_APP_IMAGE = $(DOCKER_USER)/python-app:latest
 
-.PHONY: all build docker-build deploy status clean
+# Переменные для Kubernetes
+K8S_DIR = k8s
 
-all: build
-
-# Сборка Go-приложения
+# Команды для сборки Docker-образов
 build:
-	@echo "Building Go application..."
-	go build -o bin/$(IMAGE_NAME) cmd/service.music/main.go
+	docker build -t $(GO_SERVER_IMAGE) -f docker/Dockerfile.go .
+	docker build -t $(PYTHON_APP_IMAGE) -f docker/Dockerfile.python .
 
-# Сборка Docker-образа
-docker-build:
-	@echo "Building Docker image..."
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
+# Команды для пуша Docker-образов в Docker Registry
+push:
+	docker push $(GO_SERVER_IMAGE)
+	docker push $(PYTHON_APP_IMAGE)
 
-# Деплой в Kubernetes
-deploy:
-	@echo "Deploying to Kubernetes..."
-	kubectl apply -f configs/kubernetes/postgres.yaml --validate=false
-	kubectl apply -f configs/kubernetes/redis.yaml --validate=false
-	kubectl apply -f configs/kubernetes/deployment.yaml --validate=false
+# Команда для деплоя в Kubernetes
+deploy: build push
+	kubectl apply -f $(K8S_DIR)
 
-# Получение статуса подов и сервисов
-status:
-	@echo "Getting Kubernetes status..."
-	kubectl get pods
-	kubectl get services
-
-# Удаление всех ресурсов
+# Команда для удаления всех ресурсов в Kubernetes (на случай отката)
 clean:
-	@echo "Deleting Kubernetes resources..."
-	kubectl delete -f configs/kubernetes/postgres.yaml
-	kubectl delete -f configs/kubernetes/redis.yaml
-	kubectl delete -f configs/kubernetes/deployment.yaml
+	kubectl delete -f $(K8S_DIR)
